@@ -22,7 +22,15 @@ fn test_initialize() {
     initialize_mint(&mut svm, &payer, &mint, &program_id);
 
     // Then initialize the rate limit account
-    let rate_limit = Pubkey::find_program_address(&[b"rate_limit"], &program_id).0;
+    let rate_limit = Pubkey::find_program_address(
+        &[
+            b"rate_limit",
+            mint.pubkey().as_ref(),
+            payer.pubkey().as_ref(),
+        ],
+        &program_id,
+    )
+    .0;
 
     let instruction = Instruction::new_with_bytes(
         program_id,
@@ -32,6 +40,7 @@ fn test_initialize() {
             rate_limit,
             system_program: SYSTEM_PROGRAM_ID,
             mint: mint.pubkey(),
+            owner: payer.pubkey(),
         }
         .to_account_metas(None),
     );

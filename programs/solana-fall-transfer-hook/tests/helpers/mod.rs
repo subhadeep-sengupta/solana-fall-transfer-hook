@@ -2,7 +2,7 @@ use {
     anchor_lang::{
         solana_program::instruction::{AccountMeta, Instruction},
         system_program::ID as SYSTEM_PROGRAM_ID,
-        Id, InstructionData, ToAccountMetas,
+        Id, InstructionData, Key, ToAccountMetas,
     },
     anchor_spl::{
         associated_token::{
@@ -59,7 +59,15 @@ pub fn initialize_rate_limit(
     mint: &Keypair,
     program_id: &Address,
 ) {
-    let rate_limit = Pubkey::find_program_address(&[b"rate_limit"], program_id).0;
+    let rate_limit = Pubkey::find_program_address(
+        &[
+            b"rate_limit",
+            mint.pubkey().as_ref(),
+            payer.pubkey().as_ref(),
+        ],
+        program_id,
+    )
+    .0;
 
     let ix = Instruction::new_with_bytes(
         *program_id,
@@ -69,6 +77,7 @@ pub fn initialize_rate_limit(
             rate_limit,
             system_program: SYSTEM_PROGRAM_ID,
             mint: mint.pubkey(),
+            owner: payer.pubkey(),
         }
         .to_account_metas(None),
     );
@@ -161,7 +170,11 @@ pub fn build_transfer_with_hook_ix(
     let extra_account_meta_list =
         Pubkey::find_program_address(&[b"extra-account-metas", mint.as_ref()], program_id).0;
 
-    let rate_limit = Pubkey::find_program_address(&[b"rate_limit"], program_id).0;
+    let rate_limit = Pubkey::find_program_address(
+        &[b"rate_limit", mint.key().as_ref(), owner.key().as_ref()],
+        program_id,
+    )
+    .0;
 
     ix.accounts
         .push(AccountMeta::new_readonly(*program_id, false));
